@@ -1,23 +1,21 @@
 #!/usr/bin/python3
 """
-A method
+returns n number of locked boxes in front
 """
+
 
 def canUnlockAll(boxes):
     """
-    Method that determines if all the boxes can be opened.
+    Function that determines if you can open all the lockboxes
     """
-    unlocked_boxes = set([0])
+    unlocked = set()
 
-    key_queue = boxes[0].copy()
-
-    while key_queue:
-        key = key_queue.pop(0)
-
-        if key in unlocked_boxes:
-            continue
-        unlocked_boxes.add(key)
-
-        key_queue.extend(boxes[key])
-
-    return len(unlocked_boxes) == len(boxes)
+    for box_id, box in enumerate(boxes):
+        if len(box) == 0 or box_id == 0:
+            unlocked.add(box_id)
+        for key in box:
+            if key < len(boxes) and key != box_id:
+                unlocked.add(key)
+        if len(unlocked) == len(boxes):
+            return True
+    return False

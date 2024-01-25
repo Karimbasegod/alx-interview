@@ -1,50 +1,38 @@
 #!/usr/bin/python3
 """
-log parsing
+Log parsing with metrics computation
 """
 
 import sys
 import re
 
-
-def output(log: dict) -> None:
-    """
-    helper function to display stats
-    """
-    print("File size: {}".format(log["file_size"]))
-    for code in sorted(log["code_frequency"]):
-        if log["code_frequency"][code]:
-            print("{}: {}".format(code, log["code_frequency"][code]))
-
-
-if __name__ == "__main__":
-    regex = re.compile(
-    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - \[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d+\] "GET /projects/260 HTTP/1.1" (.{3}) (\d+)')  # nopep8
+if __name__ == '__main__':
 
     line_count = 0
-    log = {}
-    log["file_size"] = 0
-    log["code_frequency"] = {
-        str(code): 0 for code in [
-            200, 301, 400, 401, 403, 404, 405, 500]}
+    total_file_size = 0
+    status_codes = ["200", "301", "400", "401", "403", "404", "405", "500"]
+    stats = {code: 0 for code in status_codes}
+
+    def print_stats(stats: dict, total_size: int) -> None:
+        print("File size:", total_size)
+        for code in sorted(stats):
+            if stats[code] > 0:
+                print(code + ":", stats[code])
 
     try:
         for line in sys.stdin:
+            line_count += 1
             line = line.strip()
-            match = regex.fullmatch(line)
-            if (match):
-                line_count += 1
-                code = match.group(1)
+            match = re.match(r'.*GET \/projects\/260 HTTP\/1\.1" (\d+) (\d+)', line)
+            if match:
+                status_code = match.group(1)
                 file_size = int(match.group(2))
-
-                # File size
-                log["file_size"] += file_size
-
-                # status code
-                if (code.isdecimal()):
-                    log["code_frequency"][code] += 1
-
-                if (line_count % 10 == 0):
-                    output(log)
-    finally:
-        output(log)
+                if status_code in status_codes:
+                    stats[status_code] += 1
+                total_file_size += file_size
+            if line_count % 10 == 0:
+                print_stats(stats, total_file_size)
+        print_stats(stats, total_file_size)
+    except KeyboardInterrupt:
+        print_stats(stats, total_file_size)
+        raise
